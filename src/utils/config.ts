@@ -18,7 +18,14 @@ export const config=  {
         mongo_url : process.env.MONGO_URL,
         name : process.env.MONGO_NAME
     },
-    PORT : process.env.PORT 
+    PORT : process.env.PORT ,
+
+    jsontoken :{
+        accessToken : process.env.ACCESS_TOKEN_SECRET,
+        accessTokenExpiry : process.env.ACCESS_TOKEN_EXPIRY,
+        refreshToken : process.env.REFRESH_TOKEN_SECRET,
+        refreshTokenExpiry : process.env.REFRESH_TOKEN_EXPIRY
+    }
 
 
 }
