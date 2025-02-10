@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { DocumentSchema } from "../types/document.types.js";
+import { DocumentSchema } from "../../types/document.types.js";
 
 const DocumentSchema = new mongoose.Schema<DocumentSchema>({
   name: {
