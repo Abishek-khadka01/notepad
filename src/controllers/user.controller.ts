@@ -1,10 +1,12 @@
 import { UserRegisterValidator, UserLoginValidator } from "../validators/user.validator.js";
-
 import logger from "../utils/logger.js";
-import { UserDocumentType, UserFnType, UserType } from "../types/user.types.js";
+import { UserDocumentType, UserFnType } from "../types/user.types.js";
 import HttpStatus from "../utils/Codes.js";
 import { User } from "../models/user.models.js";
 import { config } from "../utils/config.js";
+import { uploadOnCloudinary } from "../utils/Cloudinary.js";
+import e from "express";
+
  export const UserRegister : UserFnType=async  (req ,res)=>{
     try {
         logger.info(`The userRegister endpoint hit`)
@@ -115,11 +117,81 @@ export const UserLogin : UserFnType=async  (req,res)=>{
         })
     }
 
+}
 
 
+export const UserLogOut : UserFnType = async (req, res)=>{
+    try {
+
+    const {user} =req;
+    const findUser : UserDocumentType | null= await User.findById(user)
+        if(!findUser){
+            logger.warn(`NO user exists `)
+            res.status(HttpStatus.BAD_REQUEST).json({
+                success : false,
+                message :"No user found"
+            })
+
+
+        }
+
+        res.clearCookie("refreshToken").clearCookie("accessToken").status(HttpStatus.OK).json({
+            success : true,
+            message :"User LogOut successfully"
+        })
+
+
+        
+    } catch (error) {
+        logger.error(`Error in logging out   the user`)
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : error
+        })
+    }
 
 }
 
 
 
+export const AddProfilePicture : UserFnType= async(req, res)=>{
 
+    try {
+            const {user} = req;
+            const findUser : UserDocumentType | null = await User.findById(user)
+            if(!findUser){
+                logger.info(`the user does not exist`)
+                res.status(HttpStatus.UNAUTHORIZED).json({
+                    success :false,
+                    message :"No user exist"
+                })
+            }else{
+
+            const file : string= req.file?.path as string
+                const uploadUrl : string = await uploadOnCloudinary(file )
+                findUser.profilepicture = uploadUrl
+                await findUser.save({
+                    validateBeforeSave : false
+                })
+
+                    logger.info(`Profile Picture updated `)
+                    res.status(HttpStatus.OK).json({
+                        success : true,
+                        message :"File uploaded successfully"
+                    })
+
+            }
+
+
+
+    } catch (error) {
+        logger.error(`Error in uploading the profile picture`)
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message :`Internal server error${error}` 
+        })
+    }
+
+
+
+}
