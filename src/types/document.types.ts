@@ -1,6 +1,6 @@
 
 import Document, {Schema} from "mongoose"
-
+import {Request, Response} from "express"
 export interface DocumentSchema extends Document{
 
     name : string,
@@ -12,3 +12,5 @@ export interface DocumentSchema extends Document{
 
 
 }
+
+export type DocumentFnType = (arg1 :Request, arg2: Response)=>Promise<void>
