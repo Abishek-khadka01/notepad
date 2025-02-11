@@ -5,7 +5,7 @@ import HttpStatus from "../utils/Codes.js"
 import { User } from "../models/user.models.js";
 import { config } from "../utils/config.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
-import e from "express";
+
 
  export const UserRegister : UserFnType=async  (req ,res)=>{
     try {
