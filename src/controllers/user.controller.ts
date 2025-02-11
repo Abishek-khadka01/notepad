@@ -1,10 +1,10 @@
 import { UserRegisterValidator, UserLoginValidator } from "../validators/user.validator.js";
 
 import logger from "../utils/logger.js";
-import { UserFnType } from "../types/user.types.js";
+import { UserDocumentType, UserFnType, UserType } from "../types/user.types.js";
 import HttpStatus from "../utils/Codes.js";
 import { User } from "../models/user.models.js";
-
+import { config } from "../utils/config.js";
  export const UserRegister : UserFnType=async  (req ,res)=>{
     try {
         logger.info(`The userRegister endpoint hit`)
@@ -51,6 +51,74 @@ import { User } from "../models/user.models.js";
 
 }
 
+
+export const UserLogin : UserFnType=async  (req,res)=>{
+    try {
+        
+        const validate = UserLoginValidator.validate(req.body)
+
+        if(validate.error){
+            logger.warn(`Error in the validation of the userlogin ${validate.error.message}`)
+            res.status(HttpStatus.BAD_REQUEST).json({
+                success : false,
+                message :`${validate.error.message}`
+            })
+        }
+
+        const {email, password } = req.body;
+
+
+        const finduser : UserDocumentType | null  = await User.findOne({
+            email: email
+        })
+
+        if(!finduser){
+            logger.warn(`The user does not exist`)
+            res.status(HttpStatus.BAD_REQUEST).json({
+                success : false,
+                message :`User does not exist`
+            })
+        }else{
+
+        const validatePassword = await finduser?.checkPassword(password)
+
+        if(!validatePassword){
+            logger.warn(`Password Incorrect`)
+            message :"Invalid credentials"
+        }
+
+        const accessToken= finduser?.generateAccessToken()
+        const refreshToken = finduser?.generateRefreshToken()
+
+        finduser.refreshToken = refreshToken
+        await finduser.save({
+            validateBeforeSave : false
+        })
+
+        res.cookie("refreshToken", refreshToken,config.CookieConfig ).cookie("accessToken", accessToken, {
+            ...config.CookieConfig, 
+            maxAge:1000*60*15
+        }).status(HttpStatus.OK).json({
+            success : true,
+            message :"User Logged in successfully",
+            user: finduser
+        })
+
+
+    }
+
+    } catch (error) {
+        logger.error(`Error in loggin in  the user`)
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : error
+        })
+    }
+
+
+
+
+}
 
 
 
