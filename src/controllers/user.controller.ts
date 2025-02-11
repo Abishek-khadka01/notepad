@@ -1,7 +1,7 @@
 import { UserRegisterValidator, UserLoginValidator } from "../validators/user.validator.js";
 import logger from "../utils/logger.js";
 import { UserDocumentType, UserFnType } from "../types/user.types.js";
-import HttpStatus from "../utils/Codes.js";
+import HttpStatus from "../utils/Codes.js"
 import { User } from "../models/user.models.js";
 import { config } from "../utils/config.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
