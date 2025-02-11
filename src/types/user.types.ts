@@ -22,9 +22,21 @@ declare global {
         file?: Express.Multer.File;
         files?: Express.Multer.File[];
         user?: Schema.Types.ObjectId | null;
+       
       }
     }
   }
 
 
 export type UserFnType = (req : Request,res:  Response) => Promise<void>
+
+
+export interface JwtPayloadType extends JwtPayload {
+  _id : Schema.Types.ObjectId
+
+}
+
+export type RecreateAccessTokenType = (arg: string)=>Promise<{
+  userId  : Schema.Types.ObjectId,
+  accessToken : string
+}>

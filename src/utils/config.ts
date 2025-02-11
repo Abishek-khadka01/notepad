@@ -13,6 +13,7 @@ export const config=  {
         httpOnly : true,
         secure : true,
         samesite:"none",
+        maxAge:1000*60*60*24*15
     },
     database :{
         mongo_url : process.env.MONGO_URL,
