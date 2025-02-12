@@ -36,8 +36,8 @@ import mongoose from "mongoose";
             ownerId : user,
 
         })
-
-        newDocument.members.push(user)
+        let newUser = new mongoose.Types.ObjectId(user.toString())
+        newDocument.members.push(newUser)
         await newDocument.save({
             validateBeforeSave : false
         })
