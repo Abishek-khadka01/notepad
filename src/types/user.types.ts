@@ -1,6 +1,7 @@
 import { Document, Schema } from "mongoose";
-import { JwtPayload } from "jsonwebtoken";
+
 import { Request,Response } from "express";
+import { JwtPayload } from "jsonwebtoken";
 export interface UserDocumentType extends Document {
 
     username : string,
