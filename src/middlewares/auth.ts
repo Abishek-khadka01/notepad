@@ -37,7 +37,7 @@ export const AuthMiddleware = async (req :Request, res: Response, next : NextFun
     // If no tokens are found, respond with Unauthorized
     if (!accessToken && !refreshToken) {
       logger.warn("No tokens found in cookies");
-      return res.status(401).json({
+       res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
@@ -79,7 +79,7 @@ export const AuthMiddleware = async (req :Request, res: Response, next : NextFun
       });
 
       req.user = userId;
-      return next();
+      next();
     }
 
     // If the access token exists, verify it
@@ -90,16 +90,16 @@ export const AuthMiddleware = async (req :Request, res: Response, next : NextFun
     );
 
     if (!accessDecoded) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Unauthorized - Access token invalid",
       });
     }
 
-    req.user = accessDecoded._id;
-    return next();
+    req.user = accessDecoded?._id;
+     next();
   } catch (error) {
     logger.error(`Error in AuthMiddleware: ${error}`);
-    return next(error);
+     next(error);
   }
 };
