@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import express from "express"
+import express, { NextFunction } from "express"
 import cookieParser from "cookie-parser"
 import {config} from "./utils/config.js"
 import logger from "./utils/logger.js";
@@ -19,6 +19,14 @@ app.use(express.urlencoded({extended: true}))
 app.use(cookieParser())
 
 
+// import routes and models
+
+import { UserRouter } from "./routes/user.routes.js";
+import { DocumentRouter } from "./routes/document.routes.js";
+
+app.use("/api/v1/users", UserRouter)
+app.use("/api/v1/documents", DocumentRouter)
+
 // Connect To database
 import connectToDataBase from "./utils/Database.js";
 connectToDataBase()
@@ -28,15 +36,55 @@ httpServer.listen(config.PORT, ()=>{
 })
 
 
+
+
+
+
+
 // sockets 
 const onlineUsers = new Set<string>()
-const MapUsers = new Map() // the map contains the data in the format of userId : socketId 
-import { ConnectUsers } from "./controllers/socket.controller.js";
+const MapUsers = new Map() // the map contains the data in the format of userId : socketId
+
+
+import { AcceptRequest, ConnectUsers, IOMiddleware, SendRequest, UpdateText } from "./controllers/socket.controller.js";
 import { SocketHandler } from "./types/socket.types.js";
-import { DISCONNECT } from "./constants/socket.js";
+import { ACCEPT_REQUEST, DISCONNECT, RECIEVE_TEXT, SEND_REQUEST, UPDATE_TEXT } from "./constants/socket.js";
+import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
+
+
+
+  io.on("/", async (socket: SocketHandler, next: NextFunction)=>{
+    await IOMiddleware(socket, next)
+  })
+
+
+
+
 io.on("connection",async (socket :SocketHandler)=>{
   const userId = socket.handshake.auth.userId
- await ConnectUsers(socket)
+  const isMember = socket.isMember
+  const documentId = socket.documentId
+  
+  await ConnectUsers(socket)
+
+
+  if(!isMember){
+    socket.on(SEND_REQUEST, SendRequest)
+  }else{
+    socket.join(documentId as string)
+  }
+
+    socket.on(ACCEPT_REQUEST, AcceptRequest)
+
+
+    socket.on(UPDATE_TEXT, UpdateText)
+ 
+
+
+
+
+
+
   socket.on(DISCONNECT,(socket)=>{
       logger.info(`the user is disconnected`)
       onlineUsers.delete(socket.id)
@@ -45,6 +93,8 @@ io.on("connection",async (socket :SocketHandler)=>{
   })  
 })
 
+
+app.use(ErrorMiddleware)
 
 
 export {onlineUsers,MapUsers }

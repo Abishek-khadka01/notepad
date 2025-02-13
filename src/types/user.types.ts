@@ -29,7 +29,7 @@ declare global {
   }
 
 
-export type UserFnType = (req : Request,res:  Response) => Promise<void>
+export type UserFnType = (req : Request,res:  Response) => Promise<Response>
 
 
 export interface JwtPayloadType extends JwtPayload {

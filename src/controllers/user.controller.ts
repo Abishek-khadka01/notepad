@@ -7,6 +7,7 @@ import { config } from "../utils/config.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 
 
+
  export const UserRegister : UserFnType=async  (req ,res)=>{
     try {
         logger.info(`The userRegister endpoint hit`)
@@ -14,7 +15,7 @@ import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 
             if(validate.error){
                 logger.warn(`Validation Error in the User Register${validate.error.message}`)
-                res.status(HttpStatus.BAD_REQUEST).json({
+                return res.status(HttpStatus.BAD_REQUEST).json({
                         success : false,
                         message : validate.error.message
                 })
@@ -22,10 +23,10 @@ import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 
                 const {username, email, password}= req.body
 
-                const UserExists = await User.findOne({email})
+                const UserExists = await User.findOne({email :email})
                 if(UserExists){
                     logger.warn(`User Already exists`)
-                    res.status(HttpStatus.FORBIDDEN).json({
+                    return res.status(HttpStatus.FORBIDDEN).json({
                         success : false,
                         message  : `User Already exists `
                     })
@@ -38,14 +39,14 @@ import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 
         })
 
-        res.status(HttpStatus.OK).json({
+        return res.status(HttpStatus.OK).json({
             success : true,
             message :"User created Successfully",
             user
         })
  } catch (error ) {
         logger.error(`Error in registering the user`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message : error
         })
@@ -61,7 +62,7 @@ export const UserLogin : UserFnType=async  (req,res)=>{
 
         if(validate.error){
             logger.warn(`Error in the validation of the userlogin ${validate.error.message}`)
-            res.status(HttpStatus.BAD_REQUEST).json({
+            return res.status(HttpStatus.BAD_REQUEST).json({
                 success : false,
                 message :`${validate.error.message}`
             })
@@ -76,7 +77,7 @@ export const UserLogin : UserFnType=async  (req,res)=>{
 
         if(!finduser){
             logger.warn(`The user does not exist`)
-            res.status(HttpStatus.BAD_REQUEST).json({
+            return res.status(HttpStatus.BAD_REQUEST).json({
                 success : false,
                 message :`User does not exist`
             })
@@ -100,7 +101,8 @@ export const UserLogin : UserFnType=async  (req,res)=>{
         res.cookie("refreshToken", refreshToken,config.CookieConfig ).cookie("accessToken", accessToken, {
             ...config.CookieConfig, 
             maxAge:1000*60*15
-        }).status(HttpStatus.OK).json({
+        })
+        return res.status(HttpStatus.OK).json({
             success : true,
             message :"User Logged in successfully",
             user: finduser
@@ -111,7 +113,7 @@ export const UserLogin : UserFnType=async  (req,res)=>{
 
     } catch (error) {
         logger.error(`Error in loggin in  the user`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message : error
         })
@@ -127,7 +129,7 @@ export const UserLogOut : UserFnType = async (req, res)=>{
     const findUser : UserDocumentType | null= await User.findById(user)
         if(!findUser){
             logger.warn(`NO user exists `)
-            res.status(HttpStatus.BAD_REQUEST).json({
+            return res.status(HttpStatus.BAD_REQUEST).json({
                 success : false,
                 message :"No user found"
             })
@@ -135,7 +137,9 @@ export const UserLogOut : UserFnType = async (req, res)=>{
 
         }
 
-        res.clearCookie("refreshToken").clearCookie("accessToken").status(HttpStatus.OK).json({
+        res.clearCookie("refreshToken").clearCookie("accessToken")
+        
+        return res.status(HttpStatus.OK).json({
             success : true,
             message :"User LogOut successfully"
         })
@@ -144,7 +148,7 @@ export const UserLogOut : UserFnType = async (req, res)=>{
         
     } catch (error) {
         logger.error(`Error in logging out   the user`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message : error
         })
@@ -161,7 +165,7 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
             const findUser : UserDocumentType | null = await User.findById(user)
             if(!findUser){
                 logger.info(`the user does not exist`)
-                res.status(HttpStatus.UNAUTHORIZED).json({
+                return res.status(HttpStatus.UNAUTHORIZED).json({
                     success :false,
                     message :"No user exist"
                 })
@@ -175,7 +179,7 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
                 })
 
                     logger.info(`Profile Picture updated `)
-                    res.status(HttpStatus.OK).json({
+                    return res.status(HttpStatus.OK).json({
                         success : true,
                         message :"File uploaded successfully"
                     })
@@ -186,7 +190,7 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
 
     } catch (error) {
         logger.error(`Error in uploading the profile picture`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message :`Internal server error${error}` 
         })
