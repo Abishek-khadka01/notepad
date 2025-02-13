@@ -1,20 +1,24 @@
-
 import { JwtPayloadType } from "../types/user.types.js";
 import logger from "../utils/logger.js";
 import { RecreateAccessToken } from "../utils/Tokens.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { Request,Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
+import HttpStatus from "../utils/Codes.js";
 
-type HandleVerification = (token: string, secret: string, tokenType: string) => JwtPayloadType | null;
+type HandleVerification =   (token: string, secret: string, tokenType: string) => JwtPayloadType | null ;
 
-const handleTokenVerification: HandleVerification = (token, secret, tokenType) => {
+const handleTokenVerification: HandleVerification =  (token, secret, tokenType) => {
   try {
-    const decoded = jwt.verify(token, secret) as JwtPayloadType;
-    
+    logger.info(`Handle token verification working `)
+    console.log(`Secret is ${process.env.ACCESS_TOKEN_SECRET}`)
+    const decoded =   jwt.verify(token, secret) as JwtPayloadType;
+    console.log(decoded)
     if (!decoded) {
       throw new Error(`${tokenType} is invalid`);
     }
 
+      logger.info(`Decoded token is ${decoded.id}`)
+      console.log(typeof decoded._id)
     return decoded;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
@@ -26,80 +30,86 @@ const handleTokenVerification: HandleVerification = (token, secret, tokenType) =
   }
 };
 
-
-export const AuthMiddleware = async (req :Request, res: Response, next : NextFunction) => {
+export const AuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     logger.info("AuthMiddleware endpoint was hit");
-    console.log(req.cookies);
 
     const { accessToken, refreshToken } = req.cookies;
 
-    // If no tokens are found, respond with Unauthorized
     if (!accessToken && !refreshToken) {
       logger.warn("No tokens found in cookies");
-       res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
-    // Handle case where no access token is provided but refresh token exists
+    // Handle missing access token but present refresh token
     if (!accessToken) {
-      if (!refreshToken) {
-         res.status(401).json({
-          success: false,
-          message: "Unauthorized",
-        });
-      }
 
-      // Verify the refresh token
 
-      const refreshDecoded = await handleTokenVerification(
-
+        if(!refreshToken){
+          logger.error(`No refreshToken too `)
+          res.status(HttpStatus.UNAUTHORIZED).json({
+            success : false,
+            message :"No  tokens"
+          })
+        }else{
+      const refreshDecoded = handleTokenVerification(
         refreshToken,
         process.env.REFRESH_TOKEN_SECRET as string,
         "Refresh Token"
       );
 
       if (!refreshDecoded) {
-         res.status(401).json({
+        return res.status(401).json({
           success: false,
           message: "Unauthorized - Refresh token invalid",
         });
       }
+      }
 
-        console.log(refreshToken)
-      // Recreate access token and set in cookies
-      const { accessToken, userId } = await RecreateAccessToken(refreshToken);
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 15 * 60 * 1000, // 15 minutes
-      });
+      try {
+        // Recreate access token
+        const { accessToken: newAccessToken, userId } = await RecreateAccessToken(refreshToken);
 
-      req.user = userId;
-      next();
+        res.cookie("accessToken", newAccessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 15 * 60 * 1000, // 15 minutes
+        });
+
+        req.user = userId;
+ 
+         next();
+      } catch (error) {
+        logger.error(`Failed to recreate access token: ${error}`);
+        return res.status(500).json({
+          success: false,
+          message: "Internal Server Error",
+        });
+      }
     }
 
     // If the access token exists, verify it
-    const accessDecoded = await handleTokenVerification(
+    const accessDecoded = handleTokenVerification(
       accessToken,
       process.env.ACCESS_TOKEN_SECRET as string,
       "Access Token"
     );
 
     if (!accessDecoded) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
         message: "Unauthorized - Access token invalid",
       });
     }
 
-    req.user = accessDecoded?._id;
-     next();
+    req.user = accessDecoded.id;
+    next();
   } catch (error) {
     logger.error(`Error in AuthMiddleware: ${error}`);
-     next(error);
+    next(error);
   }
 };

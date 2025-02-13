@@ -9,9 +9,7 @@ const UserRouter = Router()
 UserRouter.post("/register", UserRegister)
 UserRouter.post("/login", UserLogin)
 UserRouter.put("/logout",AuthMiddleware,  UserLogOut)
-UserRouter.post("/create-file", AuthMiddleware, 
-    upload.single("profile")
-    , AddProfilePicture)
+UserRouter.post("/add-profile", AuthMiddleware, upload.single("profile") , AddProfilePicture)
 
 
 

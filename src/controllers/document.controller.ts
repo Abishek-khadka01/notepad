@@ -4,7 +4,7 @@ import HttpStatus from "../utils/Codes.js";
 import logger from "../utils/logger.js";
 import { User } from "../models/user.models.js";
 import { UserDocumentType } from "../types/user.types.js";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 
 
  export const createDocument : DocumentFnType=async  (req,res)=>{
@@ -16,7 +16,7 @@ import mongoose from "mongoose";
      
         if(name.length<6){
             logger.warn(`The file name should be of atleast 6 length`)
-            res.status(HttpStatus.FORBIDDEN).json({
+            return res.status(HttpStatus.FORBIDDEN).json({
                 success :false,
                 message :"The file name should be of atleast 6 length"
             })
@@ -25,7 +25,7 @@ import mongoose from "mongoose";
         const doesUserExists : UserDocumentType| null= await User.findById(user)
         if(!doesUserExists){
             logger.warn(`the user does not exist`)
-                        res.status(HttpStatus.BAD_REQUEST).json({
+                     return  res.status(HttpStatus.BAD_REQUEST).json({
                 success : false,
                 message :"the user does not exist"
             })
@@ -42,7 +42,7 @@ import mongoose from "mongoose";
             validateBeforeSave : false
         })
         
-        res.status(HttpStatus.CREATED).json({
+       return  res.status(HttpStatus.CREATED).json({
             success : true,
             message :"Document Created Successfluuy"
         })
@@ -53,7 +53,7 @@ import mongoose from "mongoose";
 
     } catch (error) {
         logger.error(`Error in creating the document ${error}`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      return   res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success :false,
             message :error
         })
@@ -70,7 +70,7 @@ import mongoose from "mongoose";
 
             if(!documentId){
                 logger.warn(`Select the document to delete`)
-                res.status(HttpStatus.BAD_REQUEST).json({
+                return res.status(HttpStatus.BAD_REQUEST).json({
                     success : false,
                     message :"Select the document to delete "
                 })
@@ -82,7 +82,7 @@ import mongoose from "mongoose";
 
             if(!doesUserExists){
                 logger.warn(`There is no such user`)
-                res.status(HttpStatus.FORBIDDEN).json({
+                 return res.status(HttpStatus.FORBIDDEN).json({
                     success : false,
                     message :" the user does not exist"
                 })
@@ -92,7 +92,7 @@ import mongoose from "mongoose";
                 _id : documentId
             })
 
-            res.status(HttpStatus.OK).json({
+             return res.status(HttpStatus.OK).json({
                 success :true,
                 messsage :"the File was deleted successfully"
             })
@@ -102,7 +102,7 @@ import mongoose from "mongoose";
 
     } catch (error) {
         logger.error(`Error in deleting the document${error}`) 
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      return   res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message :"Internal Server Error"
         }
@@ -112,54 +112,55 @@ import mongoose from "mongoose";
 
 }
 
-export const FindDocuments : DocumentFnType= async  (req,res)=>{
-
+export const FindDocuments: DocumentFnType = async (req, res) => {
     try {
-
-        const {user} = req;
-        
-        const doesUserExists = await User.findById({
-            user
-        })
-
-        if(!doesUserExists){
-            logger.warn(`There is no such user`)
-            res.status(HttpStatus.FORBIDDEN).json({
-                success : false,
-                message :" the user does not exist"
-            })
-        }
-
-        const documents = await Document.find({
-            members: {
-                $in:[user]
-            }
-        })
-        
-        if(!documents){
-            logger.error(`No documents found `)
-            res.status(HttpStatus.NOT_FOUND).json({
-                success : false,
-                message :"NO users found"
-            })
-        }
-
-        res.status(HttpStatus.FOUND).json({
-            success : true,
-            message :"Documents found ",
-            documents
-        })
-        
+      let user: string | ObjectId | null | undefined = req.user as string | ObjectId
+      console.log(typeof user);
+      
+      // If user is undefined or null, return an error
+      if (!user || !mongoose.Types.ObjectId.isValid(user as string)) {
+        logger.warn("Invalid or missing userId");
+        return res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          message: "Invalid or missing user ID format",
+        });
+      }
+  
+      // Check if the user exists in the database
+      const doesUserExist = await User.findById(user);
+      if (!doesUserExist) {
+        logger.warn("There is no such user");
+        return res.status(HttpStatus.FORBIDDEN).json({
+          success: false,
+          message: "The user does not exist",
+        });
+      }
+  
+      // Fetch documents where the user is a member
+      const documents = await Document.find({
+        members: { $in: [user] },
+      });
+  
+      if (!documents || documents.length === 0) {
+        logger.error("No documents found");
+        return res.status(HttpStatus.NOT_FOUND).json({
+          success: false,
+          message: "No documents found",
+        });
+      }
+  
+      return res.status(HttpStatus.FOUND).json({
+        success: true,
+        message: "Documents found",
+        documents,
+      });
+      
     } catch (error) {
-        logger.error(`Error in finding the documents`)
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-            success : false,
-            message :error
-        })
+      logger.error(`Error in finding the documents: ${error}`);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: error,
+      });
     }
-
-
-
-
-}
-
+  };
+  

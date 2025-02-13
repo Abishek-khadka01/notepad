@@ -6,11 +6,14 @@ import { Schema } from "mongoose";
 import { config } from "./config.js";
 export const RecreateAccessToken : RecreateAccessTokenType = async (refreshToken) => {
   try {
+    logger.info(`The recreation of accessToken is runnning`)
     const refreshTokenSecret : string = config.jsontoken.refreshToken as string
     const token = jwt.verify(
       refreshToken,
       refreshTokenSecret
     ) as JwtPayloadType
+
+
     console.log(token)
     if (!token) {
       throw new Error("Invalid refresh token");

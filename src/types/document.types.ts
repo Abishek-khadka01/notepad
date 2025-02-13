@@ -14,4 +14,4 @@ export interface DocumentSchema extends Document{
 
 }
 
-export type DocumentFnType = (arg1 :Request, arg2: Response)=>Promise<void>
+export type DocumentFnType = (arg1 :Request, arg2: Response)=>Promise<Response>

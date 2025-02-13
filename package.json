@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec ts-node dist/index.js"
+    "dev": "concurrently \"tsc --watch\" \"node ./dist/index.js\""
   },
   "repository": {
     "type": "git",
@@ -40,6 +40,7 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.13.1",
     "@types/validator": "^13.12.2",
+    "concurrently": "^9.1.2",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"

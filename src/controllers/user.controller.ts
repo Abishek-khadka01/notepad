@@ -5,7 +5,7 @@ import HttpStatus from "../utils/Codes.js"
 import { User } from "../models/user.models.js";
 import { config } from "../utils/config.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
-
+import fs from "fs"
 
 
  export const UserRegister : UserFnType=async  (req ,res)=>{
@@ -172,12 +172,20 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
             }else{
 
             const file : string= req.file?.path as string
+            if(!file){
+                logger.error(`NO files was received`)
+                return res.status(HttpStatus.NOT_FOUND).json({
+                    success : false,
+                    message :"No files was found"
+                })
+            }
                 const uploadUrl : string = await uploadOnCloudinary(file )
                 findUser.profilepicture = uploadUrl
                 await findUser.save({
                     validateBeforeSave : false
                 })
-
+                fs.rmSync(file)
+                
                     logger.info(`Profile Picture updated `)
                     return res.status(HttpStatus.OK).json({
                         success : true,
