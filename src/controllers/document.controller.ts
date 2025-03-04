@@ -1,9 +1,9 @@
 import { Document } from "../models/document.models.js";
-import { DocumentFnType, DocumentSchema } from "../types/document.types.js";
+import { DocumentFnType, DocumentSchema } from "../utils/types/document.types.js";
 import HttpStatus from "../utils/Codes.js";
 import logger from "../utils/logger.js";
 import { User } from "../models/user.models.js";
-import { UserDocumentType } from "../types/user.types.js";
+import { UserDocumentType } from "../utils/types/user.types.js";
 import mongoose, { ObjectId } from "mongoose";
 
 

@@ -1,4 +1,4 @@
-import { JwtPayloadType } from "../types/user.types.js";
+import { JwtPayloadType } from "../utils/types/user.types.js";
 import logger from "../utils/logger.js";
 import { RecreateAccessToken } from "../utils/Tokens.js";
 import jwt, { JwtPayload } from "jsonwebtoken";

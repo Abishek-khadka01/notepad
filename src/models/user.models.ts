@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { UserDocumentType } from "../types/user.types.js";
+import { UserDocumentType } from "../utils/types/user.types.js";
 import dotenv from "dotenv"
 dotenv.config()
 const UserSchema = new Schema<UserDocumentType>({

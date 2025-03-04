@@ -47,7 +47,7 @@ const MapUsers = new Map() // the map contains the data in the format of userId 
 
 
 import { AcceptRequest, ConnectUsers, IOMiddleware, SendRequest, UpdateText } from "./controllers/socket.controller.js";
-import { SocketHandler } from "./types/socket.types.js";
+import { SocketHandler } from "./utils/types/socket.types.js";
 import { ACCEPT_REQUEST, DISCONNECT, RECIEVE_TEXT, SEND_REQUEST, UPDATE_TEXT } from "./constants/socket.js";
 import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
 
