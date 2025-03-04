@@ -164,3 +164,36 @@ export const FindDocuments: DocumentFnType = async (req, res) => {
     }
   };
   
+
+export const GetDocumentByID : DocumentFnType = async (req , res)=>{
+  try {
+
+    const {documentId } = req.params
+    if(!documentId){
+      logger.warn(`No document Id found`)
+      return res.status(HttpStatus.NOT_FOUND).json({
+        success : false,
+        message :"No documentId found"
+      })
+    }
+
+      const findDocument = await Document.findById(documentId).populate("members")
+      if(!documentId){
+        return res.status(HttpStatus.NOT_FOUND).json({
+          success :false,
+          message :"NO document found"
+        })
+      }
+    
+    
+    return res.status(HttpStatus.OK).json({
+      success : true ,
+      message : findDocument
+    })
+  } catch (error) {
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      success : false,
+      message :error 
+    })
+  }
+}
