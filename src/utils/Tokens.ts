@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.models.js";
 import logger from "./logger.js";
-import { JwtPayloadType, RecreateAccessTokenType, UserDocumentType } from "./types/user.types.js";
+import { JwtPayloadType, RecreateAccessTokenType, UserDocumentType } from "../types/user.types.js";
 import { Schema } from "mongoose";
 import { config } from "./config.js";
 export const RecreateAccessToken : RecreateAccessTokenType = async (refreshToken) => {

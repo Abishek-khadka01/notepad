@@ -4,6 +4,7 @@ import express, { NextFunction } from "express"
 import cookieParser from "cookie-parser"
 import {config} from "./utils/config.js"
 import logger from "./utils/logger.js";
+import cors from "cors"
 const app = express()
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -17,7 +18,11 @@ const io = new Server(httpServer, {
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(cookieParser())
-
+app.use(cors({
+  origin : "http://localhost:5173",
+  credentials: true,
+  methods:['POST', 'GET', 'PUT', 'DELETE']
+}))
 
 // import routes and models
 
@@ -47,7 +52,7 @@ const MapUsers = new Map() // the map contains the data in the format of userId 
 
 
 import { AcceptRequest, ConnectUsers, IOMiddleware, SendRequest, UpdateText } from "./controllers/socket.controller.js";
-import { SocketHandler } from "./utils/types/socket.types.js";
+import { SocketHandler } from "./types/socket.types.js";
 import { ACCEPT_REQUEST, DISCONNECT, RECIEVE_TEXT, SEND_REQUEST, UPDATE_TEXT } from "./constants/socket.js";
 import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
 

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { UserDocumentType } from "../utils/types/user.types.js";
+import { UserDocumentType } from "../types/user.types.js";
 import dotenv from "dotenv"
 dotenv.config()
 const UserSchema = new Schema<UserDocumentType>({
@@ -20,6 +20,7 @@ const UserSchema = new Schema<UserDocumentType>({
   },
   profilepicture: {
     type: String,
+    default:"https://media.istockphoto.com/id/517998264/vector/male-user-icon.jpg?s=612x612&w=0&k=20&c=4RMhqIXcJMcFkRJPq6K8h7ozuUoZhPwKniEke6KYa_k="
   },
   refreshToken: {
     type: String,

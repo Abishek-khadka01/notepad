@@ -1,12 +1,12 @@
 import { Socket } from "socket.io";
 import logger from "../utils/logger.js";
-import { DocumentType, SocketHandler } from "../utils/types/socket.types.js";
+import { DocumentType, SocketHandler } from "../types/socket.types.js";
 import {CHECK_STATUS, ERROR, RECIEVE_TEXT, SEND_REQUEST} from "../constants/socket.js"
 import { onlineUsers, MapUsers } from "../index.js";
 import { NextFunction } from "express";
 import { User } from "../models/user.models.js";
 import { Document } from "../models/document.models.js";
-import { DocumentSchema } from "../utils/types/document.types.js";
+import { DocumentSchema } from "../types/document.types.js";
 import { Schema, Types } from "mongoose";
 
 
