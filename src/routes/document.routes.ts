@@ -11,6 +11,6 @@ DocumentRouter.use(AuthMiddleware)
 DocumentRouter.post("/create-document", createDocument)
 DocumentRouter.put("/delete-document", deleteDocument)
 DocumentRouter.get("/find",FindDocuments)
-DocumentRouter.get("/find/:documentID", GetDocumentByID)
+DocumentRouter.get("/find/:id", GetDocumentByID)
 
-export {DocumentRouter}
+export {DocumentRouter}        

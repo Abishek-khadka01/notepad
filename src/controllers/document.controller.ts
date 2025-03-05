@@ -10,6 +10,7 @@ import mongoose, { ObjectId } from "mongoose";
  export const createDocument : DocumentFnType=async  (req,res)=>{
 
     try {
+      logger.info(`The create Document Endpoint hit`)
         let user : mongoose.Schema.Types.ObjectId = req.user as mongoose.Schema.Types.ObjectId
         const {name} = req.body
         
@@ -66,9 +67,9 @@ import mongoose, { ObjectId } from "mongoose";
  export const deleteDocument :DocumentFnType =async (req ,res)=>{
     try {
     const {user} = req;
-        const {documentId} = req.body
+        const {id} = req.body
 
-            if(!documentId){
+            if(!id){
                 logger.warn(`Select the document to delete`)
                 return res.status(HttpStatus.BAD_REQUEST).json({
                     success : false,
@@ -89,7 +90,7 @@ import mongoose, { ObjectId } from "mongoose";
             }
 
             await Document.findOneAndDelete({
-                _id : documentId
+                _id : id
             })
 
              return res.status(HttpStatus.OK).json({
@@ -168,17 +169,18 @@ export const FindDocuments: DocumentFnType = async (req, res) => {
 export const GetDocumentByID : DocumentFnType = async (req , res)=>{
   try {
 
-    const {documentId } = req.params
-    if(!documentId){
+    const {id } = req.params
+    console.log(id)
+    if(!id){
       logger.warn(`No document Id found`)
       return res.status(HttpStatus.NOT_FOUND).json({
         success : false,
-        message :"No documentId found"
+        message :"No id found"
       })
     }
 
-      const findDocument = await Document.findById(documentId).populate("members")
-      if(!documentId){
+      const findDocument = await Document.findById(id).populate("members")
+      if(!id){
         return res.status(HttpStatus.NOT_FOUND).json({
           success :false,
           message :"NO document found"
