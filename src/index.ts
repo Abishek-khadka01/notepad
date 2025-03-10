@@ -63,12 +63,12 @@ const MapIDToSocketId = new Map<string, string>();
 const SocketIdToID = new Map<string, string>();
 const SocketIdDocument = new Set<string>();
 
-io.use(async (socket: SocketHandler, next: Function) => {
+io.use( async (socket: SocketHandler, next: Function) => {
   logger.info("Socket.io middleware running");
 
   const { userID } = socket.handshake.auth;
   const { documentID } = socket.handshake.query;
-  logger.info(userID, documentID);
+  logger.info(`The user id is ${userID } and documentID is ${documentID}`);
   try {
     const findUser = await User.findById(userID);
     if (!findUser) {
@@ -108,17 +108,25 @@ io.on("connection", async (socket: SocketHandler) => {
 
   const document = await Document.findById(documentId);
   const isMember = document?.members.includes(new mongoose.Types.ObjectId(userId));
+  
 
   logger.warn(`Document members: ${document?.members}`);
 
   const ownerSocketId = MapIDToSocketId.get(String(document?.ownerId));
-
+  
   // If the user is not a member of the document
   if (!isMember) {
+    console.log(ownerSocketId, "ghdfhg",userId)
+
     if (!ownerSocketId) {
+      logger.error(`Passing through the no owner and not a members too `)
+      
       // If the document owner socket is not found
-      socket.emit("end-document", {
+      socket.to(socket.id).emit("endDocument", {
         message: "You are not a member of the document",
+      }, (response: unknown)=>{
+        logger.info(`End document is emitted  to ${socket.id}, ${response} }`)
+
       });
     } else {
       // Emit request to join the document to the owner
@@ -135,21 +143,46 @@ io.on("connection", async (socket: SocketHandler) => {
         SocketIdDocument.add(memberSocketId);
       }
     });
+    console.log(`The document is passed through the is member check`)
   }
 
   // Handle updates to the document text
   socket.on("update-text", async ({ from, message }) => {
-    // You can handle text updates here
+    logger.info(`Update text from ${from} to ${message}`);
+     const socketIds = document?.members.map((id) => {
+      return MapIDToSocketId.get(String(id))
+    })
+// To do 
+
+ // Do not add the one who initiated the change
+    
+      const OnlineSOcketUserforDocument =  socketIds?.filter(id=>id)
+      console.log(`The online users for document is ${OnlineSOcketUserforDocument}`)
+
+      console.log(`Socket ids of the online users is ${socketIds}`)
+
+    OnlineSOcketUserforDocument?.forEach((socketId) => {
+      socket.to(socketId as string).emit("update-text-event", { from, message });
+    })
+
+    
   });
+
+ // Handles Error 
+ socket.on("error" , (error)=>{
+  logger.error(error.message)
+ })
+
 
   // Handle user disconnection
   socket.on("disconnect", () => {
-    logger.info(`User with ID ${userId} disconnected from socket`);
-
+    logger.error(`User with ID ${userId} disconnected from socket`);
+    
     // Clean up on disconnect
     MapIDToSocketId.delete(userId as string);
     SocketIdToID.delete(socket.id);
     redis.lrem("onlineUsers", 0, userId as string);
+    
   });
 });
 
