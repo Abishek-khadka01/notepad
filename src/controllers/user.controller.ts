@@ -124,8 +124,9 @@ export const UserLogin : UserFnType=async  (req,res)=>{
 
 export const UserLogOut : UserFnType = async (req, res)=>{
     try {
-
+        logger.info(`The UserLogOut function was hit`)
     const {user} =req;
+    logger.info(`The user id is ${user}`)
     const findUser : UserDocumentType | null= await User.findById(user)
         if(!findUser){
             logger.warn(`NO user exists `)
