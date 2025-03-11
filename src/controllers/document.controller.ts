@@ -5,7 +5,7 @@ import logger from "../utils/logger.js";
 import { User } from "../models/user.models.js";
 import { UserDocumentType } from "../types/user.types.js";
 import mongoose, { ObjectId } from "mongoose";
-
+import {redis} from "../index.js"
 
  export const createDocument : DocumentFnType=async  (req,res)=>{
 
@@ -32,6 +32,24 @@ import mongoose, { ObjectId } from "mongoose";
             })
         }
 
+
+        // Check if the user have already made the document named as the file 
+
+        const CheckDocumentExists = await Document.findOne(
+         {
+          ownerId : user,
+          name,
+         } 
+        )
+        if(CheckDocumentExists){
+          logger.warn(`The document with the same name already exits and is created by user`)
+            return res.status(HttpStatus.FORBIDDEN).json({
+                success :false,
+                message :"The document with the same name already exits and is created by user"
+            })
+        }
+
+
         const newDocument  = await Document.create({
             name,
             ownerId : user,
@@ -43,12 +61,14 @@ import mongoose, { ObjectId } from "mongoose";
             validateBeforeSave : false
         })
         
+        logger.info(`The document is created successfully`)
        return  res.status(HttpStatus.CREATED).json({
             success : true,
-            message :"Document Created Successfluuy"
+            message :"Document Created Successfluuy",
+            document  : newDocument
         })
 
-
+        
 
 
 
@@ -114,88 +134,145 @@ import mongoose, { ObjectId } from "mongoose";
 }
 
 export const FindDocuments: DocumentFnType = async (req, res) => {
-    try {
-      let user: string | ObjectId | null | undefined = req.user as string | ObjectId
-      console.log(typeof user);
-      
-      // If user is undefined or null, return an error
-      if (!user || !mongoose.Types.ObjectId.isValid(user as string)) {
-        logger.warn("Invalid or missing userId");
-        return res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          message: "Invalid or missing user ID format",
-        });
-      }
-  
-      // Check if the user exists in the database
-      const doesUserExist = await User.findById(user);
-      if (!doesUserExist) {
-        logger.warn("There is no such user");
-        return res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          message: "The user does not exist",
-        });
-      }
-  
-      // Fetch documents where the user is a member
-      const documents = await Document.find({
-        members: { $in: [user] },
+  try {
+    let user: string | ObjectId | null | undefined = req.user as string | ObjectId
+    
+    // Early returns for invalid user
+    if (!user || !mongoose.Types.ObjectId.isValid(user as string)) {
+      logger.warn("Invalid or missing userId");
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: "Invalid or missing user ID format",
       });
+    }
+    
+    // Check if the user exists in the database
+    const doesUserExist = await User.findById(user);
+    if (!doesUserExist) {
+      logger.warn("There is no such user");
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: "The user does not exist",
+      });
+    }
+    
+    // Fetch documents where the user is a member
+    const documents = await Document.find({
+      members: { $in: [user] },
+    }).populate("members", "username profilepicture").select("name updatedAt _id ")
+    
+    // Handle no documents case
+    if (!documents || documents.length === 0) {
+      logger.error("No documents found");
+      return res.status(HttpStatus.NOT_FOUND).json({
+        success: false,
+        message: "No documents found",
+      });
+    }
+    
+    // If we reach here, we haven't sent a response yet, so this is fine
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Documents found",
+      documents,
+    });
+  } catch (error) {
+    logger.error(`Error in finding the documents: ${error}`);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    if (!res.headersSent) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: error instanceof Error ? error : String(error),
+      });
+    }
+  }
+};
   
-      if (!documents || documents.length === 0) {
-        logger.error("No documents found");
+
+  export const GetDocumentByID: DocumentFnType = async (req, res) => {
+    try {
+      logger.info(`GetDocumentId is running`);
+      
+      const { id } = req.params;
+      if (!id) {
+        logger.warn(`No document Id found`);
         return res.status(HttpStatus.NOT_FOUND).json({
           success: false,
-          message: "No documents found",
+          message: "No id found",
+        });
+      }
+      console.log(await Document.findById(id), "dgfjdjgf")
+      const findDocument = await Document.findById(id).populate(
+        "members",
+        "_id username profilepicture"
+      ).select("name content updatedAt _id");
+      console.log(findDocument?.content)
+      if (!findDocument) {
+        logger.warn(`No document found with ID: ${id}`);
+        return res.status(HttpStatus.NOT_FOUND).json({
+          success: false,
+          message: "No document found",
         });
       }
   
-      return res.status(HttpStatus.FOUND).json({
+      const OnlineMembers = await redis.lrange("onlineUsers", 0, -1);
+  
+      // Avoid modifying the Mongoose document directly
+      const documentData = findDocument.toObject(); // Convert to plain object
+      documentData.members = documentData.members.filter((member) =>
+        OnlineMembers.includes(String(member._id))
+      );
+  
+      return res.status(HttpStatus.OK).json({
         success: true,
-        message: "Documents found",
-        documents,
+        message: documentData,
       });
-      
+  
     } catch (error) {
-      logger.error(`Error in finding the documents: ${error}`);
+      logger.error(`Error in GetDocumentByID: ${error}`);
+
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: error,
-      });
+      })
+      // Ensure no response has already been sent
+      if (!res.headersSent) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          message: error || "Internal Server Error",
+        });
+      }
     }
   };
   
+  export const DocumentUpdate : DocumentFnType= async (req,res)=>{
 
-export const GetDocumentByID : DocumentFnType = async (req , res)=>{
-  try {
+    try {
+      logger.info(`The document update is running`)
+        const {id, message } = req.body;
+        const UpdateDocument = await Document.findByIdAndUpdate(id , {
+          $push : {
+            content : message
+          }
+        })
 
-    const {id } = req.params
-    console.log(id)
-    if(!id){
-      logger.warn(`No document Id found`)
-      return res.status(HttpStatus.NOT_FOUND).json({
+
+        logger.info(`the message is updated successfully`);
+        return res.status(HttpStatus.OK).json({
+          success : true,
+          message :"Updated successfully"
+        })
+      
+    } catch (error) {
+      logger.error(`Error in DocumentUpdate: ${error}`);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         success : false,
-        message :"No id found"
+        message : error
       })
     }
 
-      const findDocument = await Document.findById(id).populate("members")
-      if(!id){
-        return res.status(HttpStatus.NOT_FOUND).json({
-          success :false,
-          message :"NO document found"
-        })
-      }
-    
-    
-    return res.status(HttpStatus.OK).json({
-      success : true ,
-      message : findDocument
-    })
-  } catch (error) {
-    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-      success : false,
-      message :error 
-    })
+
   }
-}

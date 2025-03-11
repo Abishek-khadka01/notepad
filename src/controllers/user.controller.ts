@@ -190,7 +190,8 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
                     logger.info(`Profile Picture updated `)
                     return res.status(HttpStatus.OK).json({
                         success : true,
-                        message :"File uploaded successfully"
+                        message :"File uploaded successfully",
+                        profile : findUser.profilepicture
                     })
 
             }
@@ -207,4 +208,42 @@ export const AddProfilePicture : UserFnType= async(req, res)=>{
 
 
 
+}
+
+export const GetProfileDetails : UserFnType=async (req, res)=>{
+    try {
+        
+        const {user} = req;
+
+            if(!user){
+                logger.warn(`The user does not exist`)
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    success : false,
+                    message :`Userid from middleware does not exist`
+                })
+            }
+
+            const findUser = await User.findById(user).select("-password -refreshToken")
+            if(!findUser){
+                logger.warn(`The user does not exist`)
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    success : false,
+                    message :`User does not exist`
+                })
+            }
+
+            
+
+        return res.status(HttpStatus.OK).json({
+            success : true,
+            message :"User is found",
+            user : findUser
+        })
+    } catch (error) {
+        logger.error(`error in the getting profile details`)
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : error
+        })
+    }
 }

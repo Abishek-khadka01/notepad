@@ -8,6 +8,7 @@ const DocumentSchema = new mongoose.Schema<DocumentSchema>({
   },
   content: {
     type: String,
+    default:"hello world"
     
   },
   ownerId: {

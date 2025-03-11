@@ -147,12 +147,15 @@ io.on("connection", async (socket: SocketHandler) => {
   }
 
   // Handle updates to the document text
-  socket.on("update-text", async ({ from, message }) => {
+  socket.on("update-text", async ({ from, message, DocumentID }) => {
     logger.info(`Update text from ${from} to ${message}`);
+    console.log(from )
+    const findUser =await User.findById(from)
+
      const socketIds = document?.members.map((id) => {
       return MapIDToSocketId.get(String(id))
     })
-// To do 
+
 
  // Do not add the one who initiated the change
     
@@ -162,7 +165,7 @@ io.on("connection", async (socket: SocketHandler) => {
       console.log(`Socket ids of the online users is ${socketIds}`)
 
     OnlineSOcketUserforDocument?.forEach((socketId) => {
-      socket.to(socketId as string).emit("update-text-event", { from, message });
+      socket.to(socketId as string).emit("update-text-event", {id : findUser?._id, from, profile : findUser?.profilepicture, name : findUser?.username,  message, DocumentID });
     })
 
     
@@ -191,4 +194,4 @@ import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
 import { SocketHandler } from "./types/socket.types.js";
 app.use(ErrorMiddleware);
 
-export { MapIDToSocketId, SocketIdToID };
+export { MapIDToSocketId, SocketIdToID, redis};
