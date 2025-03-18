@@ -36,6 +36,7 @@ export const AuthMiddleware = async (req: Request, res: Response, next: NextFunc
 
     const { accessToken, refreshToken } = req.cookies;
 
+      console.table(req.cookies)
     if (!accessToken && !refreshToken) {
       logger.warn("No tokens found in cookies");
       return res.status(401).json({

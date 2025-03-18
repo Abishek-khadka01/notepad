@@ -114,56 +114,65 @@ import mongoose, { ObjectId } from "mongoose";
 }
 
 export const FindDocuments: DocumentFnType = async (req, res) => {
-    try {
-      let user: string | ObjectId | null | undefined = req.user as string | ObjectId
-      console.log(typeof user);
+  try {
+    logger.info(`Find documents is running `)
+    let user: string | ObjectId | null | undefined = req.user as string | ObjectId 
+    
+    console.log(`The user id is ${req.user}`)
       
-      // If user is undefined or null, return an error
-      if (!user || !mongoose.Types.ObjectId.isValid(user as string)) {
-        logger.warn("Invalid or missing userId");
-        return res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          message: "Invalid or missing user ID format",
-        });
-      }
-  
-      // Check if the user exists in the database
-      const doesUserExist = await User.findById(user);
-      if (!doesUserExist) {
-        logger.warn("There is no such user");
-        return res.status(HttpStatus.FORBIDDEN).json({
-          success: false,
-          message: "The user does not exist",
-        });
-      }
-  
-      // Fetch documents where the user is a member
-      const documents = await Document.find({
-        members: { $in: [user] },
-      });
-  
-      if (!documents || documents.length === 0) {
-        logger.error("No documents found");
-        return res.status(HttpStatus.NOT_FOUND).json({
-          success: false,
-          message: "No documents found",
-        });
-      }
-  
-      return res.status(HttpStatus.FOUND).json({
-        success: true,
-        message: "Documents found",
-        documents,
-      });
-      
-    } catch (error) {
-      logger.error(`Error in finding the documents: ${error}`);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    // Early returns for invalid user
+    if (!user || !mongoose.Types.ObjectId.isValid(user as string)) {
+      logger.warn("Invalid or missing userId");
+      return res.status(HttpStatus.FORBIDDEN).json({
         success: false,
-        message: error,
+        message: "Invalid or missing user ID format",
       });
     }
-  };
+    
+    // Check if the user exists in the database
+    const doesUserExist = await User.findById(user);
+    if (!doesUserExist) {
+      logger.warn("There is no such user");
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: "The user does not exist",
+      });
+    }
+    
+    // Fetch documents where the user is a member
+    const documents = await Document.find({
+      members: { $in: [user] },
+    }).populate("members", "username profilepicture").select("name updatedAt _id ")
+    
+    // Handle no documents case
+    if (!documents || documents.length === 0) {
+      logger.error("No documents found");
+      return res.status(HttpStatus.NOT_FOUND).json({
+        success: false,
+        message: "No documents found",
+      });
+    }
+    
+    // If we reach here, we haven't sent a response yet, so this is fine
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: "Documents found",
+      documents,
+    });
+  } catch (error) {
+    logger.error(`Error in finding the documents: ${error}`);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    if (!res.headersSent) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: error instanceof Error ? error : String(error),
+      });
+    }
+  }
+};
   
 
 export const GetDocumentByID : DocumentFnType = async (req , res)=>{
