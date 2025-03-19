@@ -119,19 +119,20 @@ io.on("connection", async (socket: SocketHandler) => {
     console.log(ownerSocketId, "ghdfhg",userId)
 
     if (!ownerSocketId) {
-      logger.error(`Passing through the no owner and not a members too `)
-      
-      // If the document owner socket is not found
-      socket.to(socket.id).emit("endDocument", {
-        message: "You are not a member of the document",
-      }, (response: unknown)=>{
-        logger.info(`End document is emitted  to ${socket.id}, ${response} }`)
-
-      });
+      console.log(`Socket owner id is not online `)
+      socket.to(socket.id).emit("error", {
+        message:"Owner is not online"
+      })
     } else {
+
+      const userID = SocketIdToID.get(socket.id as string )
+      const user = await User.findById(userID).select("_id , username , profilepicture")
+      
+
       // Emit request to join the document to the owner
       socket.to(ownerSocketId).emit("request-to-join-document", {
         from: userId,
+        user,
         message: "Request to join the document",
       });
     }
@@ -149,13 +150,13 @@ io.on("connection", async (socket: SocketHandler) => {
   // Handle updates to the document text
   socket.on("update-text", async ({ from, message, DocumentID }) => {
     logger.info(`Update text from ${from} to ${message}`);
-    console.log(from )
-    const findUser =await User.findById(from)
-
      const socketIds = document?.members.map((id) => {
       return MapIDToSocketId.get(String(id))
     })
 
+    // id , from, message, DocumentID, profile, name
+    console.log(`Socket ids are ${socketIds}`)
+// To do 
 
  // Do not add the one who initiated the change
     
@@ -163,14 +164,49 @@ io.on("connection", async (socket: SocketHandler) => {
       console.log(`The online users for document is ${OnlineSOcketUserforDocument}`)
 
       console.log(`Socket ids of the online users is ${socketIds}`)
+      const finduser = await User.findById(from )
+
 
     OnlineSOcketUserforDocument?.forEach((socketId) => {
-      socket.to(socketId as string).emit("update-text-event", {id : findUser?._id, from, profile : findUser?.profilepicture, name : findUser?.username,  message, DocumentID });
+      console.log(socketId)
+      socket.to(socketId as string).emit("update-text-event", {DocumentID , profile : finduser?.profilepicture,
+        name : finduser?.username , from, message });
     })
 
     
   });
 
+  //Accepts join request
+
+  socket.on("accept_join_request", async ({userId, documentID})=>{
+
+    console.log(userId, documentID)
+
+    const document = await Document.findById(documentID)
+
+      document?.members.push(new mongoose.Types.ObjectId(userId))
+      await document?.save()
+    console.log(`Document change ${document}`)
+
+      const socketId = MapIDToSocketId.get(userId)
+      socket.emit("accepted_request", {
+        message :"Accepted the request"
+      })
+
+  })
+
+
+  // reject join request
+
+  socket.on("reject_join_request", ({userId})=>{
+      console.log(userId)
+      const socketIdofUser = MapIDToSocketId.get(userId)
+      socket.to(socketIdofUser as string ).emit("rejected_request")
+      
+  })
+
+
+  
  // Handles Error 
  socket.on("error" , (error)=>{
   logger.error(error.message)
@@ -194,4 +230,4 @@ import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
 import { SocketHandler } from "./types/socket.types.js";
 app.use(ErrorMiddleware);
 
-export { MapIDToSocketId, SocketIdToID, redis};
+export { MapIDToSocketId, SocketIdToID , redis};

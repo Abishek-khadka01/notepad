@@ -86,9 +86,10 @@ import {redis} from "../index.js"
 
  export const deleteDocument :DocumentFnType =async (req ,res)=>{
     try {
+      logger.info(`delete document is running `)
     const {user} = req;
-        const {id} = req.body
-
+        const {id} = req.params
+      console.log(`Document id is ${id}`)
             if(!id){
                 logger.warn(`Select the document to delete`)
                 return res.status(HttpStatus.BAD_REQUEST).json({
@@ -97,9 +98,7 @@ import {redis} from "../index.js"
                 })
             }
 
-            const doesUserExists = await User.findById({
-                user
-            })
+            const doesUserExists = await User.findById(user)
 
             if(!doesUserExists){
                 logger.warn(`There is no such user`)
@@ -192,61 +191,86 @@ export const FindDocuments: DocumentFnType = async (req, res) => {
 };
   
 
-  export const GetDocumentByID: DocumentFnType = async (req, res) => {
-    try {
-      logger.info(`GetDocumentId is running`);
-      
-      const { id } = req.params;
-      if (!id) {
-        logger.warn(`No document Id found`);
-        return res.status(HttpStatus.NOT_FOUND).json({
-          success: false,
-          message: "No id found",
-        });
-      }
-      console.log(await Document.findById(id), "dgfjdjgf")
-      const findDocument = await Document.findById(id).populate(
-        "members",
-        "_id username profilepicture"
-      ).select("name content updatedAt _id");
-      console.log(findDocument?.content)
-      if (!findDocument) {
-        logger.warn(`No document found with ID: ${id}`);
-        return res.status(HttpStatus.NOT_FOUND).json({
-          success: false,
-          message: "No document found",
-        });
-      }
-  
-      const OnlineMembers = await redis.lrange("onlineUsers", 0, -1);
-  
-      // Avoid modifying the Mongoose document directly
-      const documentData = findDocument.toObject(); // Convert to plain object
-      documentData.members = documentData.members.filter((member) =>
-        OnlineMembers.includes(String(member._id))
-      );
-  
-      return res.status(HttpStatus.OK).json({
-        success: true,
-        message: documentData,
-      });
-  
-    } catch (error) {
-      logger.error(`Error in GetDocumentByID: ${error}`);
+export const GetDocumentByID: DocumentFnType = async (req, res) => {
+  try {
+    const { user } = req; // Extract user from request
+    let  { id } = req.params; // Extract document ID from params
+    id = id.trim(); 
+    console.log(`ID is ${id}`);
 
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    // Ensure the user is authenticated
+    if (!user) {
+      logger.warn(`User not found, unauthorized request`);
+      return res.status(HttpStatus.UNAUTHORIZED).json({
         success: false,
-        message: error,
-      })
-      // Ensure no response has already been sent
-      if (!res.headersSent) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-          success: false,
-          message: error || "Internal Server Error",
-        });
-      }
+        message: "Unauthorized",
+      });
     }
-  };
+
+    // Find the document by its ID
+    let  findDocument = await Document.findById(id) .populate("members", "_id username profilepicture")
+    .select("name ownerId content updatedAt _id");
+
+    
+
+    if (!findDocument) {
+      logger.error(`No document found with ID: ${id}`);
+      return res.status(HttpStatus.NOT_FOUND).json({
+        success: false,
+        message: "Not found",
+      });
+    }
+
+    // Retrieve online members from Redis
+    const onlineMembers = await redis.lrange("onlineMembers", 0, -1);
+    console.log(`Online members are: ${onlineMembers}`);
+
+    // Check if the user is a member of the document
+    const isMember = findDocument?.members.some((docMemberId) => 
+      String(docMemberId._id) === String(user)
+    );
+
+    // Check if the document owner is online
+    const isOwnerOnline = onlineMembers.includes(String(findDocument?.ownerId));
+
+    console.log(`Is member: ${isMember}, Is owner online: ${isOwnerOnline}`);
+
+    // If neither the user is a member nor the owner is online, deny access
+    if (!isMember && !isOwnerOnline) {
+      logger.error(`Unauthorized access attempt: Neither is member nor is the owner online`);
+      return res.status(HttpStatus.UNAUTHORIZED).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+     
+    // Avoid modifying the Mongoose document directly
+    const documentData = findDocument.toObject(); // Convert to plain object
+
+    // Filter out members who are not online
+    documentData.members = documentData.members.filter((member) =>
+      onlineMembers.includes(String(member._id))
+    );
+
+    // Return the document data
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: documentData,
+    });
+
+  } catch (error) {
+    // Handle any errors that occur during the process
+    logger.error(`Error retrieving document by ID: ${error}`);
+    return res.status(500).json({
+      success: false,
+      message: `Internal server error: ${error}`,
+    });
+  }
+};
+
+
+
   
   export const DocumentUpdate : DocumentFnType= async (req,res)=>{
 

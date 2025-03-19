@@ -9,7 +9,7 @@ const DocumentRouter = Router()
 
 DocumentRouter.use(AuthMiddleware)
 DocumentRouter.post("/create-document", createDocument)
-DocumentRouter.put("/delete-document", deleteDocument)
+DocumentRouter.delete("/delete-document/:id", deleteDocument)
 DocumentRouter.get("/find",FindDocuments)
 DocumentRouter.get("/find/:id", GetDocumentByID)
 DocumentRouter.patch("/update-document", DocumentUpdate)
