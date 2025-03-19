@@ -193,6 +193,7 @@ export const FindDocuments: DocumentFnType = async (req, res) => {
 
 export const GetDocumentByID: DocumentFnType = async (req, res) => {
   try {
+    
     const { user } = req; // Extract user from request
     let  { id } = req.params; // Extract document ID from params
     id = id.trim(); 
@@ -222,7 +223,7 @@ export const GetDocumentByID: DocumentFnType = async (req, res) => {
     }
 
     // Retrieve online members from Redis
-    const onlineMembers = await redis.lrange("onlineMembers", 0, -1);
+    const onlineMembers = await redis.lrange("onlineUsers", 0, -1);
     console.log(`Online members are: ${onlineMembers}`);
 
     // Check if the user is a member of the document
@@ -248,15 +249,20 @@ export const GetDocumentByID: DocumentFnType = async (req, res) => {
     // Avoid modifying the Mongoose document directly
     const documentData = findDocument.toObject(); // Convert to plain object
 
+      console.log( "djghieportjeiortgljkdlgdjgld",documentData)
     // Filter out members who are not online
-    documentData.members = documentData.members.filter((member) =>
-      onlineMembers.includes(String(member._id))
+     const UsersOnline = documentData.members.filter((member) =>{
+      logger.error(`The member is ${member._id}`)
+      console.log(`The map method includes ${onlineMembers.includes(String(member._id))}`)
+      return onlineMembers.includes(String(member._id))
+    }
     );
 
     // Return the document data
     return res.status(HttpStatus.OK).json({
       success: true,
       message: documentData,
+      members : UsersOnline
     });
 
   } catch (error) {
@@ -277,12 +283,18 @@ export const GetDocumentByID: DocumentFnType = async (req, res) => {
     try {
       logger.info(`The document update is running`)
         const {id, message } = req.body;
-        const UpdateDocument = await Document.findByIdAndUpdate(id , {
-          $push : {
-            content : message
-          }
-        })
+        const UpdateDocument = await Document.findById(id)
 
+        if(!UpdateDocument){
+          logger.warn(`NO document found `)
+          return res.status(HttpStatus.NOT_FOUND).json({
+            success : false,
+            message :"No document found"
+          })
+        }
+
+        UpdateDocument.content = message;
+        await UpdateDocument.save()
 
         logger.info(`the message is updated successfully`);
         return res.status(HttpStatus.OK).json({

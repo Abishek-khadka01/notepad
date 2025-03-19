@@ -69,7 +69,7 @@ export const AuthMiddleware = async (req: Request, res: Response, next: NextFunc
       }
       }
 
-      try {
+      
         // Recreate access token
         const { accessToken: newAccessToken, userId } = await RecreateAccessToken(refreshToken);
 
@@ -83,14 +83,8 @@ export const AuthMiddleware = async (req: Request, res: Response, next: NextFunc
         req.user = userId;
  
          next();
-      } catch (error) {
-        logger.error(`Failed to recreate access token: ${error}`);
-        return res.status(500).json({
-          success: false,
-          message: "Internal Server Error",
-        });
-      }
-    }
+    
+    }else{
 
     // If the access token exists, verify it
     const accessDecoded = handleTokenVerification(
@@ -108,6 +102,7 @@ export const AuthMiddleware = async (req: Request, res: Response, next: NextFunc
 
     req.user = accessDecoded.id;
     next();
+  }
   } catch (error) {
     logger.error(`Error in AuthMiddleware: ${error}`);
     next(error);
