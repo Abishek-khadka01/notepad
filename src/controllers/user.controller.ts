@@ -59,7 +59,7 @@ import fs from "fs"
 
 export const UserLogin : UserFnType=async  (req,res)=>{
     try {
-        
+        logger.info(`The user login is running `)
         const validate = UserLoginValidator.validate(req.body)
 
         if(validate.error){
@@ -100,7 +100,7 @@ export const UserLogin : UserFnType=async  (req,res)=>{
             validateBeforeSave : false
         })
 
-        res.cookie("accessToken " , accessToken, {
+        res.cookie("accessToken", accessToken, {
             httpOnly : true,
             secure : true,
             sameSite : "none",
@@ -127,7 +127,7 @@ export const UserLogin : UserFnType=async  (req,res)=>{
     }
 
     } catch (error) {
-        logger.error(`Error in loggin in  the user`)
+        logger.error(`Error in loggin in  the user, ${error}`)
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             success : false,
             message : error

@@ -46,16 +46,21 @@ httpServer.listen(process.env.PORT, () => {
 });
 
 // Set up Redis
+
+console.log("Redis details are ", process.env.REDIS_USERNAME , " the passwrods is ",   process.env.REDIS_PASSWORD , process.env.REDIS_HOST)
 const redis =  createClient({
   username: process.env.REDIS_USERNAME  as string,
   password : process.env.REDIS_PASSWORD as string ,
   socket: {
-      host: process.env.REDIS_HOST  ,
+      host: process.env.REDIS_HOST,
       port: 12196
   }
 });
 
-
+redis.connect()
+redis.on("error", (error)=>{
+  logger.error(`Error in connecting to the redis ${error.message}`)
+})
 
 redis.on("connect", () => {
   logger.info(`Redis is connected successfully`);
@@ -234,6 +239,7 @@ io.on("connection", async (socket: SocketHandler) => {
 // Error Middleware
 import { ErrorMiddleware } from "./middlewares/ErrorMiddleware.js";
 import { SocketHandler } from "./types/socket.types.js";
+import { error } from "console";
 app.use(ErrorMiddleware);
 
 export { MapIDToSocketId, SocketIdToID , redis};

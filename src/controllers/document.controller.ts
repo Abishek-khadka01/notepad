@@ -223,7 +223,7 @@ export const GetDocumentByID: DocumentFnType = async (req, res) => {
     }
 
     // Retrieve online members from Redis
-    const onlineMembers = await redis.lrange("onlineUsers", 0, -1);
+    const onlineMembers = await redis.lRange("onlineUsers", 0, -1);
     console.log(`Online members are: ${onlineMembers}`);
 
     // Check if the user is a member of the document
