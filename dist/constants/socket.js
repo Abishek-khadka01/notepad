@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ACCEPT_REQUEST = exports.RECIEVE_TEXT = exports.UPDATE_TEXT = exports.CHECK_STATUS = exports.SEND_REQUEST = exports.DISCONNECT = exports.ERROR = void 0;
+exports.ERROR = "ERROR";
+exports.DISCONNECT = "DISCONNECT";
+exports.SEND_REQUEST = "SEND_REQUEST";
+exports.CHECK_STATUS = "CHECK_STATUS";
+exports.UPDATE_TEXT = "UPDATE_TEXT";
+exports.RECIEVE_TEXT = "RECIEVE_TEXT";
+exports.ACCEPT_REQUEST = "ACCEPT_REQUEST";

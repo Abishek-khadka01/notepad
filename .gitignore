@@ -29,5 +29,5 @@ tmp/
 *.swp
 
 # Build output
-dist/
+
 build/

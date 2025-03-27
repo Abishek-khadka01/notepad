@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DocumentRouter = void 0;
+const express_1 = require("express");
+const auth_js_1 = require("../middlewares/auth.js");
+const document_controller_js_1 = require("../controllers/document.controller.js");
+const DocumentRouter = (0, express_1.Router)();
+exports.DocumentRouter = DocumentRouter;
+DocumentRouter.use(auth_js_1.AuthMiddleware);
+DocumentRouter.post("/create-document", document_controller_js_1.createDocument);
+DocumentRouter.delete("/delete-document/:id", document_controller_js_1.deleteDocument);
+DocumentRouter.get("/find", document_controller_js_1.FindDocuments);
+DocumentRouter.get("/find/:id", document_controller_js_1.GetDocumentByID);
+DocumentRouter.patch("/update-document", document_controller_js_1.DocumentUpdate);
