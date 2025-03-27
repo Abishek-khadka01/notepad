@@ -9,7 +9,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # TypeScript compiled files
-src/
+
 
 # Optional npm cache directory
 .npm
