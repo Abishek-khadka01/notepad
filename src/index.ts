@@ -5,11 +5,11 @@ import cookieParser from "cookie-parser";
 
 import logger from "./utils/logger.js";
 import cors from "cors";
-import Redis from "ioredis";
+
 import { Document } from "./models/document.models.js";
 import mongoose from "mongoose";
 import { User } from "./models/user.models.js";
-
+import {createClient} from "redis"
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -46,10 +46,16 @@ httpServer.listen(process.env.PORT, () => {
 });
 
 // Set up Redis
-const redis = new Redis({
-  host: "localhost",
-  port: 6380,
+const redis =  createClient({
+  username: process.env.REDIS_USERNAME  as string,
+  password : process.env.REDIS_PASSWORD as string ,
+  socket: {
+      host: process.env.REDIS_HOST  ,
+      port: 12196
+  }
 });
+
+
 
 redis.on("connect", () => {
   logger.info(`Redis is connected successfully`);
@@ -100,9 +106,9 @@ io.on("connection", async (socket: SocketHandler) => {
   MapIDToSocketId.set(userId as string, socket.id as string);
   SocketIdToID.set(socket.id, userId as string);
 
-  const onlineUsers = await redis.lrange("onlineUsers", 0, -1);
+  const onlineUsers = await redis.lRange("onlineUsers", 0, -1);
   if (!onlineUsers.includes(userId as string)) {
-    await redis.lpush("onlineUsers", userId as string);
+    await redis.lPush("onlineUsers", userId as string);
     logger.info(`User ${userId} added to online users.`);
   }
 
@@ -214,13 +220,13 @@ io.on("connection", async (socket: SocketHandler) => {
 
 
   // Handle user disconnection
-  socket.on("disconnect", () => {
+  socket.on("disconnect",async () => {
     logger.error(`User with ID ${userId} disconnected from socket`);
     
     // Clean up on disconnect
     MapIDToSocketId.delete(userId as string);
     SocketIdToID.delete(socket.id);
-    redis.lrem("onlineUsers", 0, userId as string);
+    await redis.lRem("onlineUsers", 0, userId as string);
     
   });
 });
