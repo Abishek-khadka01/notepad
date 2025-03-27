@@ -10,7 +10,7 @@ yarn-error.log*
 
 # TypeScript compiled files
 tmp/
-
+.env
 # Optional npm cache directory
 .npm
 .package-lock-json
