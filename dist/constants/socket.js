@@ -1,0 +1,7 @@
+export const ERROR = "ERROR";
+export const DISCONNECT = "DISCONNECT";
+export const SEND_REQUEST = "SEND_REQUEST";
+export const CHECK_STATUS = "CHECK_STATUS";
+export const UPDATE_TEXT = "UPDATE_TEXT";
+export const RECIEVE_TEXT = "RECIEVE_TEXT";
+export const ACCEPT_REQUEST = "ACCEPT_REQUEST";

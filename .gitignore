@@ -9,8 +9,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # TypeScript compiled files
-tmp/
-.env
+src/
+
 # Optional npm cache directory
 .npm
 .package-lock-json
@@ -29,5 +29,5 @@ tmp/
 *.swp
 
 # Build output
-dist/
+
 build/
