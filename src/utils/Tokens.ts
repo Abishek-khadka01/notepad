@@ -3,11 +3,11 @@ import { User } from "../models/user.models.js";
 import logger from "./logger.js";
 import { JwtPayloadType, RecreateAccessTokenType, UserDocumentType } from "../types/user.types.js";
 import { Schema } from "mongoose";
-import { config } from "./config.js";
+
 export const RecreateAccessToken : RecreateAccessTokenType = async (refreshToken) => {
   try {
     logger.info(`The recreation of accessToken is runnning`)
-    const refreshTokenSecret : string = config.jsontoken.refreshToken as string
+    const refreshTokenSecret : string = process.env.REFRESH_TOKEN_SECRET as string
     const token = jwt.verify(
       refreshToken,
       refreshTokenSecret

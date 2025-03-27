@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import express, { NextFunction } from "express";
 import cookieParser from "cookie-parser";
-import { config } from "./utils/config.js";
+
 import logger from "./utils/logger.js";
 import cors from "cors";
 import Redis from "ioredis";
@@ -41,8 +41,8 @@ app.use("/api/v1/documents", DocumentRouter);
 import connectToDataBase from "./utils/Database.js";
 connectToDataBase();
 
-httpServer.listen(config.PORT, () => {
-  logger.info(`App is running at port ${config.PORT}`);
+httpServer.listen(process.env.PORT, () => {
+  logger.info(`App is running at port ${process.env.PORT}`);
 });
 
 // Set up Redis

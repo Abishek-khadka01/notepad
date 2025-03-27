@@ -3,9 +3,11 @@ import logger from "../utils/logger.js";
 import { UserDocumentType, UserFnType } from "../types/user.types.js";
 import HttpStatus from "../utils/Codes.js"
 import { User } from "../models/user.models.js";
-import { config } from "../utils/config.js";
+
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import fs from "fs"
+
+
 
 
  export const UserRegister : UserFnType=async  (req ,res)=>{
@@ -98,10 +100,23 @@ export const UserLogin : UserFnType=async  (req,res)=>{
             validateBeforeSave : false
         })
 
-        res.cookie("refreshToken", refreshToken,config.CookieConfig ).cookie("accessToken", accessToken, {
-            ...config.CookieConfig, 
-            maxAge:1000*60*15
-        })
+        res.cookie("accessToken " , accessToken, {
+            httpOnly : true,
+            secure : true,
+            sameSite : "none",
+            maxAge : 1000 * 60 * 15
+        }).cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure : true,
+            sameSite : "none",
+            maxAge : 1000 * 60 * 60 * 24 * 15
+
+        }
+        )
+
+        
+            
+        
         return res.status(HttpStatus.OK).json({
             success : true,
             message :"User Logged in successfully",
