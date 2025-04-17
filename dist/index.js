@@ -42,7 +42,7 @@ const redis = createClient({
     password: process.env.REDIS_PASSWORD,
     socket: {
         host: process.env.REDIS_HOST,
-        port: 12196
+        port: 13406
     }
 });
 redis.connect();
